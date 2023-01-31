@@ -2,69 +2,9 @@ Spring Cloud Contract Documentation
 
 January 2023
 
-# Table of Contents {#table-of-contents .TOC-Heading}
-
-[**Spring Cloud Contract**
-[3](#spring-cloud-contract)](#spring-cloud-contract)
-
-[Definitions [3](#definitions)](#definitions)
-
-[General Information [3](#general-information)](#general-information)
-
-[Spring Cloud Contract Verifier
-[3](#spring-cloud-contract-verifier)](#spring-cloud-contract-verifier)
-
-[Spring Cloud Contract Verifier with Stub Runner
-[4](#spring-cloud-contract-verifier-with-stub-runner)](#spring-cloud-contract-verifier-with-stub-runner)
-
-[Contract DSL in Java [4](#contract-dsl-in-java)](#contract-dsl-in-java)
-
-[Adding the Maven Plugin
-[4](#adding-the-maven-plugin)](#adding-the-maven-plugin)
-
-[Naming Contracts [5](#naming-contracts)](#naming-contracts)
-
-[Configuration [5](#configuration)](#configuration)
-
-[Producer Side [5](#producer-side)](#producer-side)
-
-[Consumer Side [7](#consumer-side)](#consumer-side)
-
-[WireMock [8](#wiremock)](#wiremock)
-
-[Dependency in pom.xml
-[8](#dependency-in-pom.xml)](#dependency-in-pom.xml)
-
-[Spring Cloud Contract WireMock
-[8](#spring-cloud-contract-wiremock)](#spring-cloud-contract-wiremock)
-
-[Registering Stubs Automatically
-[9](#registering-stubs-automatically)](#registering-stubs-automatically)
-
-[Using Files to Specify the Stub Bodies
-[10](#using-files-to-specify-the-stub-bodies)](#using-files-to-specify-the-stub-bodies)
-
-[Using JUnit \@Rules to Start and Stop the Server
-[10](#using-junit-rules-to-start-and-stop-the-server)](#using-junit-rules-to-start-and-stop-the-server)
-
-[Contracts for HTTP [10](#contracts-for-http)](#contracts-for-http)
-
-[Integrating WebFlux with WebTestClient
-[11](#integrating-webflux-with-webtestclient)](#integrating-webflux-with-webtestclient)
-
-[Stub Runner Boot Application
-[11](#stub-runner-boot-application)](#stub-runner-boot-application)
-
-[**Resources** [12](#resources)](#resources)
-
-[Spring Cloud Contract Links
-[12](#spring-cloud-contract-links)](#spring-cloud-contract-links)
-
-# **Spring Cloud Contract**[^1]
-
 ## Definitions
 
--   []{#Contract .anchor}**Contract:** agreement on how the API/message
+-   **Contract:** agreement on how the API/message
     communication should look
 
     -   If any changes are made on the *Producer* side that directly
