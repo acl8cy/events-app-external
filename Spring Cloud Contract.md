@@ -1,0 +1,549 @@
+Spring Cloud Contract Documentation
+
+January 2023
+
+# Table of Contents {#table-of-contents .TOC-Heading}
+
+[**Spring Cloud Contract**
+[3](#spring-cloud-contract)](#spring-cloud-contract)
+
+[Definitions [3](#definitions)](#definitions)
+
+[General Information [3](#general-information)](#general-information)
+
+[Spring Cloud Contract Verifier
+[3](#spring-cloud-contract-verifier)](#spring-cloud-contract-verifier)
+
+[Spring Cloud Contract Verifier with Stub Runner
+[4](#spring-cloud-contract-verifier-with-stub-runner)](#spring-cloud-contract-verifier-with-stub-runner)
+
+[Contract DSL in Java [4](#contract-dsl-in-java)](#contract-dsl-in-java)
+
+[Adding the Maven Plugin
+[4](#adding-the-maven-plugin)](#adding-the-maven-plugin)
+
+[Naming Contracts [5](#naming-contracts)](#naming-contracts)
+
+[Configuration [5](#configuration)](#configuration)
+
+[Producer Side [5](#producer-side)](#producer-side)
+
+[Consumer Side [7](#consumer-side)](#consumer-side)
+
+[WireMock [8](#wiremock)](#wiremock)
+
+[Dependency in pom.xml
+[8](#dependency-in-pom.xml)](#dependency-in-pom.xml)
+
+[Spring Cloud Contract WireMock
+[8](#spring-cloud-contract-wiremock)](#spring-cloud-contract-wiremock)
+
+[Registering Stubs Automatically
+[9](#registering-stubs-automatically)](#registering-stubs-automatically)
+
+[Using Files to Specify the Stub Bodies
+[10](#using-files-to-specify-the-stub-bodies)](#using-files-to-specify-the-stub-bodies)
+
+[Using JUnit \@Rules to Start and Stop the Server
+[10](#using-junit-rules-to-start-and-stop-the-server)](#using-junit-rules-to-start-and-stop-the-server)
+
+[Contracts for HTTP [10](#contracts-for-http)](#contracts-for-http)
+
+[Integrating WebFlux with WebTestClient
+[11](#integrating-webflux-with-webtestclient)](#integrating-webflux-with-webtestclient)
+
+[Stub Runner Boot Application
+[11](#stub-runner-boot-application)](#stub-runner-boot-application)
+
+[**Resources** [12](#resources)](#resources)
+
+[Spring Cloud Contract Links
+[12](#spring-cloud-contract-links)](#spring-cloud-contract-links)
+
+# **Spring Cloud Contract**[^1]
+
+## Definitions
+
+-   []{#Contract .anchor}**Contract:** agreement on how the API/message
+    communication should look
+
+    -   If any changes are made on the *Producer* side that directly
+        impact the contract without updating the *Consumer* side,
+        contract failure may result
+
+-   []{#Consumer .anchor}**Consumer:** the client side
+
+-   []{#Mock .anchor}**Mock:** an object that tests for behavior by
+    registering expected method calls before a test run
+
+    -   Checks to see if the object being tested makes an expected
+        sequence of calls to the object being mocked and throws an error
+        if any unexpected calls are made
+
+-   []{#Producer .anchor}**Producer:** the server side
+
+-   []{#Stub .anchor}**Stub:** testable version of the object with
+    callable methods that returns pre-set values
+
+    -   Returns canned responses to pre-determined methods to allow
+        tests to run
+
+## General Information
+
+-   Gives you the certainty that the [*stubs*](#Stub) you use were
+    created by the service that you call
+
+    -   If you use the *stubs*, they were tested against the
+        [*producer's*](#Producer) side
+
+        -   Means that you can trust those *stubs*
+
+-   With *Spring Cloud Contract*, the [*contract*](#Contract) in the
+    *Producer* is used to create *stubs* that are loaded from the
+    *Producer* project to generate a mocked *Producer* object in the
+    [*Consumer*](#Consumer) class
+
+-   By default, *Spring Cloud Contract* integrates with
+    [*WireMock*](#wiremock) as the HTTP server *stub*
+
+-   Common application properties that can be specified in the
+    *application.properties* file: [Common application properties
+    (spring.io)](https://cloud.spring.io/spring-cloud-contract/reference/html/appendix.html#common-application-properties)
+
+-   Example Spring Cloud Contract Project: [An Intro to Spring Cloud
+    Contract](https://www.baeldung.com/spring-cloud-contract)
+
+## Spring Cloud Contract Verifier
+
+-   *Spring Cloud Contract* consists of *Spring Cloud Contract Verifier*
+
+-   **Spring Cloud Contract Verifier:** a tool that enables
+    *Consumer-Driven Contract* (CDC) development of Java Virtual Machine
+    (JVM)-based applications
+
+    -   Shipped with *Contract Definition Language* (DSL) -- written in
+        Groovy or YAML
+
+    -   Moves test-driven development (TDD) to the level of software
+        architecture
+
+-   [*Contract*](#Contract) definitions can be used to produce the
+    following resources:
+
+    -   JSON [*stub*](#Stub) definitions to be used by
+        [*WireMock*](#wiremock) (HTTP Server Stub) when doing
+        integration testing on the client code (by default)
+
+        -   Test data is produced by *Spring Cloud Contract Verifier*;
+            test code must be written by hand
+
+    -   Messaging routes, if applicable
+
+    -   Acceptance tests (JUnit or Spock by default) used to verify if
+        server-side implementation of the API is compliant with the
+        *contract* (server tests)
+
+        -   Full test is generated by *Spring Cloud Contract Verifier*
+
+-   Spring Cloud Contract Verifier API: [Spring Cloud Contract
+    Verifier](https://javadoc.io/doc/org.springframework.cloud/spring-cloud-contract-verifier/3.1.5/index.html)
+
+### Spring Cloud Contract Verifier with Stub Runner 
+
+-   May run into an issue while using *Spring Cloud Contract Verifier*
+    when it's passing the generated *WireMock* JSON [*stubs*](#Stub)
+    from the server side to the client side
+
+    -   *Spring Cloud Contract Stub Runner* is meant to automatically
+        download and run *stubs* for you
+
+-   Together, *Spring Cloud Contract Verifier and Stub Runner* are meant
+    to provide fast feedback without the need to set up a lot of
+    microservices
+
+-   **Features:**
+
+    -   Ensure that HTTP/Messaging stubs (used when developing the
+        client) are doing what the actual server-side implementation
+        will do
+
+    -   Promote Acceptance Test Driven Development (ATDD) method and a
+        microservices architecture
+
+    -   Provide a way to publish changes in [*contracts*](#Contract)
+        that are immediately visible on both sides of the communication
+
+    -   Generate boilerplate test code used on the server side
+
+## Contract DSL in Java
+
+-   To write a [*contract*](#Contract) definition, need to create a
+    class that implements either the *Supplier\<Contract\>* interface
+    (for a single contract) or *Supplier\<Collection\<Contract\>\>* (for
+    multiple contracts)
+
+-   Can also write *contract* definitions under *src/test/java* (e.g.,
+    *src/test/java/contracts*) so that the classpath of the project does
+    not have to be modified
+
+-   **Example --** *Contract* definition under *src/test/java*:
+
+![](media/image1.png){width="5.092837926509186in"
+height="1.381486220472441in"}
+
+## Adding the Maven Plugin
+
+-   Can set up a Maven project for [*Spring Cloud Contract
+    Verifier*](#spring-cloud-contract-verifier)
+
+-   Add the following to the dependency section of the *pom.xml* file:
+
+![](media/image2.png){width="4.434359142607174in"
+height="1.6827821522309712in"}
+
+-   Add the following to the plugin section of the *pom.xml* file to add
+    the *Spring Cloud Contract Verifier* Maven plugin:
+
+![](media/image3.png){width="4.656032370953631in"
+height="2.3384623797025372in"}
+
+-   For more information on how to set up the Maven project: [Maven
+    Project
+    (spring.io)](https://cloud.spring.io/spring-cloud-contract/reference/html/maven-project.html)
+
+## Naming Contracts
+
+-   Need to ensure that name does not contain any characters that make
+    the generated test not compile
+
+-   Autogenerated tests will fail to compile, and the generated
+    [*stubs*](#Stub) will override each other if the same name is
+    provided for multiple [*contracts*](#Contract)
+
+-   Ex: if the name of the *contract* is "*should register a user"*:
+
+    -   The name of the autogenerated test is
+        *validate_should_register_a_user*
+
+    -   The name of the *stub* in a *WireMock* *stub* is
+        *should_register_a_user.json*
+
+## Configuration
+
+### Producer Side
+
+-   Can add files with REST/messaging [*contracts*](#Contract) written
+    in Groovy DSL or YAML to the "*contracts"* directory, which is set
+    by the *contractsDslDir* property
+    ("*\$rootDir/src/test/resources/contracts"* by default)
+
+-   Add the following to the dependency section of the *pom.xml* file:
+
+![](media/image4.png){width="5.21081583552056in"
+height="0.839520997375328in"}
+
+-   Add the following to the plugin section of the *pom.xml* file:
+
+![](media/image5.png){width="5.006055336832896in"
+height="1.0445330271216098in"}
+
+-   Running "*./mvnw clean install"* automatically generates tests that
+    verify the application compliance with the added *contracts*
+
+    -   Tests get generated under
+        *org.springframework.cloud.contract.verifier.tests* by default
+
+-   Tests will fail as the implementation of the functionalities
+    described by the *contracts* is not present yet
+
+    -   Add the correct implementation of either handling HTTP requests
+        or messages to make the tests pass
+
+-   Need to add a base test class for auto-generated tests to the
+    project
+
+    -   This class is extended by all auto-generated tests and should
+        have all setup information necessary to run them
+
+-   **Example --** Specifying base test class (from documentation):
+
+![](media/image6.png){width="6.5in" height="2.563888888888889in"}
+
+-   **Example -** Defining a minimal base test class (from
+    documentation):
+
+![](media/image7.png){width="4.67111220472441in"
+height="1.4851738845144358in"}
+
+-   **NOTE:** *baseClassForTests* element lets you specify your base
+    test class
+
+    -   Must be a child of a configuration element within
+        *spring-cloud-contract-maven-plugin*
+
+-   Once the implementation and test base class are in place, the tests
+    will pass
+
+    -   The application and [*stub*](#Stub) artifacts are built and
+        installed in local Maven repository
+
+    -   Can then merge changes and publish the application and *stub*
+        artifacts to online repository
+
+### Consumer Side
+
+-   Can use *Spring Cloud Contract Stub Runner* in integration tests to
+    get running [*WireMock*](#wiremock) instance or messaging route that
+    simulates the actual service
+
+-   Add the following to the dependency section of the *pom.xml* file:
+
+![](media/image8.png){width="5.690259186351706in"
+height="0.9404735345581803in"}
+
+-   Can get the [*Producer*](#Producer)-side stubs installed in Maven
+    repository in two ways
+
+    -   1\. Check out *Producer*-side repository, add contracts, and
+        generate [*stubs*](#Stub) with the following commands:
+
+![](media/image9.png){width="2.7228608923884514in"
+height="0.38990813648293965in"}
+
+-   Tests are skipped since Producer-side contract implementation is not
+    in place yet (automatically generated contract tests fail)
+
+```{=html}
+<!-- -->
+```
+-   2\. Get existing *producer* service *stubs* from remote repository
+    by passing the *stub* artifact IDs and artifact repository URL as
+    *Spring Cloud Contract Stub Runner* properties as follows:
+
+![](media/image10.png){width="4.752237532808399in"
+height="0.5950448381452318in"}
+
+-   Can then annotate test class with *\@AutoConfigureStubRunner*
+
+    -   Include the *group-id* and *artifact-id* values for *Spring
+        Cloud Contract Stub Runner* to run collaborators' *stubs* for
+        you as shown in the following example:
+
+![](media/image11.png){width="5.844318678915136in"
+height="0.8454286964129484in"}
+
+-   Use *REMOTE stubsMode* when downloading stubs from an online
+    repository and *LOCAL* for offline work
+
+```{=html}
+<!-- -->
+```
+-   Can now receive stubbed versions of HTTP responses or messages that
+    are expected to be emitted by the collaborator service your
+    integration test
+
+## WireMock[^2]
+
+-   Library for [*stubbing*](#Stub) and [*mocking*](#Mock) web services
+
+-   Constructs an HTTP server that acts as an actual HTTP service
+
+-   Can test the REST API in [*Spring Boot*](#SpringBoot) application by
+    using *WireMock* to *mock* external applications to call any
+    external services that are needed
+
+### Dependency in pom.xml
+
+-   Add the following to the *pom.xml* file to add the **standard
+    [*WireMock*](#wiremock)** JAR as a project dependency:
+
+![](media/image12.png){width="3.3811734470691164in"
+height="0.9802307524059493in"}
+
+## Spring Cloud Contract WireMock[^3]
+
+-   If you have a [*Spring Boot*](#SpringBoot) application that uses
+    [Tomcat](https://tomcat.apache.org/index) as an embedded server
+    (default with *spring-boot-starter-web)*, can add
+    *spring-cloud-starter-contract-stub-runner* to class path and add
+    *\@AutoConfigureWireMock* to use [*WireMock*](#wiremock) in tests
+
+-   WireMock runs as a [*stub*](#Stub) server
+
+    -   Can register *stub* behavior by using a Java API or by using
+        static JSON declarations as part of the test
+
+-   **Example** - From documentation:
+
+![](media/image13.png){width="6.5in" height="3.1034722222222224in"}
+
+### Registering Stubs Automatically 
+
+-   If using *\@AutoConfigureWireMock,* it registers
+    [*WireMock*](#wiremock) JSON [*stubs*](#Stub) from the file
+    system/classpath (from *file:src/test/resources/mappings* by
+    default)
+
+    -   Can customize locations by using the *stubs* attribute in the
+        annotation
+
+    -   Attribute can be an [Ant-style resource
+        pattern/directory](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/util/AntPathMatcher.html)
+
+        -   *\*/.json* is appended if it is a directory
+
+-   **Example --** Documentation showing an example:
+
+![](media/image14.png){width="4.358917322834646in"
+height="1.7836154855643045in"}
+
+-   **NOTE:** *WireMock* always loads mappings from
+    *src/test/resources/mappings* and the custom locations in the
+    *stubs* attribute
+
+    -   To instead specify a file root: [Using Files to Specify the Stub
+        Bodies](#using-files-to-specify-the-stub-bodies)
+
+-   **NOTE:** mappings in the *stubs* location are NOT considered part
+    of the *default mappings*
+
+    -   Calls to
+        *com.github.tomakehurst.wiremock.client.WireMock.resetToDefaultMappings*
+        during a test do NOT include the mappings in the *stubs*
+        location
+
+    -   *org.springframework.cloud.contract.wiremock.WireMockTestExecutionListener*
+        resets mappings (including adding the ones form the *stubs*
+        location) after every test class
+
+-   If using *Spring Cloud Contract's* default *stub* jars, the *stubs*
+    are stored in the
+    */META-INF/group-id/artifact-id/versions/mappings/* folder
+
+### Using Files to Specify the Stub Bodies 
+
+-   [*WireMock*](#wiremock) can read response bodies from files on the
+    classpath/file system
+
+    -   For a file system, can see in the JSON DSL that the response has
+        a *bodyFileName* instead of a literal *body*
+
+    -   Files are resolved relative to root directory
+        (*src/test/resources/\_\_files* by default)
+
+```{=html}
+<!-- -->
+```
+-   To customize the location:
+
+    -   Can set the *files* attribute in the *\@AutoConfigureWireMock*
+        annotation to the location of the parent directory
+
+    -   Can use Spring resource notation to refer to *file: ...* or
+        *classpath:...* locations
+
+    -   Generic URLs are NOT supported
+
+### Using JUnit \@Rules to Start and Stop the Server
+
+![](media/image15.png){width="6.5in" height="3.9277777777777776in"}
+
+![](media/image16.png){width="6.5in" height="1.5763888888888888in"}
+
+## Contracts for HTTP
+
+-   *Spring Cloud Contract* verifies that the server, for a request that
+    matches the criteria from the *request* part of the
+    [*contract*](#Contract), provides a response that is in keeping with
+    the *response* part of the *contract*
+
+-   The *contracts* are used to generate *[WireMock](#wiremock) stubs*
+    that provide a suitable response for any request matching the
+    provided criteria
+
+-   For additional information about *contracts* for HTTP: [Contracts
+    for
+    HTTP](https://docs.spring.io/spring-cloud-contract/docs/3.0.0-SNAPSHOT/reference/htmlsingle/#features-http)
+
+## Integrating WebFlux with WebTestClient
+
+-   Can work with *WebFlux* by using *WebTestClient*
+
+-   Add the following the plugin section of the *pom.xml* file to
+    configure *WebTestClient* as the test mode:
+
+![](media/image17.png){width="4.770017497812773in"
+height="1.49623687664042in"}
+
+## Stub Runner Boot Application 
+
+-   *Spring Cloud Contract Stub Runner* is a *Spring Boot* application
+    that exposes REST endpoints to trigger messaging labels and access
+    [*WireMock*](#wiremock) servers
+
+-   One use case is to run smoke (end-to-end) tests on a deployed
+    application
+
+-   For additional information on configuration: [Stub Runner Boot
+    Application](https://docs.spring.io/spring-cloud-contract/docs/3.0.0-SNAPSHOT/reference/htmlsingle/#features-stub-runner-boot)
+
+# 
+
+# 
+
+# 
+
+# 
+
+# 
+
+# 
+
+# 
+
+# **Resources** 
+
+## Spring Cloud Contract Links
+
+-   **Overview:** [Spring Cloud
+    Contract](https://spring.io/projects/spring-cloud-contract)
+
+-   **Getting Started:** [Spring Cloud Contract - Getting
+    Started](https://docs.spring.io/spring-cloud-contract/docs/current/reference/html/getting-started.html#getting-started-introducing-spring-cloud-contract)
+
+-   **How-to Reference Guide:** ["How-to" Guides
+    (spring.io)](https://cloud.spring.io/spring-cloud-contract/reference/html/howto.html#why-spring-cloud-contract)
+
+-   **Spring Cloud Contract with WireMock:** [Spring Cloud Contract
+    WireMock](https://docs.spring.io/spring-cloud-contract/docs/current/reference/html/project-features.html#features-wiremock)
+
+-   **Consumer-Driven Contracts:** [Consumer-Driven Contracts: A Service
+    Evolution
+    Pattern](https://martinfowler.com/articles/consumerDrivenContracts.html)
+
+-   **Setting up with Maven:** [Maven Project
+    (spring.io)](https://cloud.spring.io/spring-cloud-contract/reference/html/maven-project.html)
+
+-   **Common Application Properties:** [Common application properties
+    (spring.io)](https://cloud.spring.io/spring-cloud-contract/reference/html/appendix.html#common-application-properties)
+
+-   **Spring Cloud Contract Verifier API:** [Spring Cloud Contract
+    Verifier](https://javadoc.io/doc/org.springframework.cloud/spring-cloud-contract-verifier/3.1.5/index.html)
+
+-   **Example Spring Cloud Contract Project:** [An Intro to Spring Cloud
+    Contract](https://www.baeldung.com/spring-cloud-contract)
+
+-   **Contracts for HTTP:** [Contracts for
+    HTTP](https://docs.spring.io/spring-cloud-contract/docs/3.0.0-SNAPSHOT/reference/htmlsingle/#features-http)
+
+-   **Stub Runner Boot Application Configuration:** [Stub Runner Boot
+    Application](https://docs.spring.io/spring-cloud-contract/docs/3.0.0-SNAPSHOT/reference/htmlsingle/#features-stub-runner-boot)
+
+[^1]: Source: [Spring Cloud Contract Reference
+    Documentation](https://docs.spring.io/spring-cloud-contract/docs/3.0.0-SNAPSHOT/reference/htmlsingle/)
+
+[^2]: Source:
+    [WireMock](https://medium.com/cuddle-ai/testing-spring-boot-application-using-wiremock-and-junit-5-d514a47ab931)
+
+[^3]: Source: [Spring Cloud Contract
+    WireMock](https://docs.spring.io/spring-cloud-contract/docs/current/reference/html/project-features.html#features-wiremock)
